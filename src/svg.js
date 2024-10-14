@@ -46,6 +46,9 @@ Svg.prototype = {
   getFirstPathElement(element) {
     return element.getElementsByTagName("path")[0];
   },
+  getPathElements(element) {
+    return Array.from(element.getElementsByTagName("path"));
+  },
   getAttributes(element) {
     return Object.values(element.attributes).map(function (attribute) {
       /**
@@ -58,19 +61,33 @@ Svg.prototype = {
       return false;
     });
   },
+  // resetAttributes(element, attributes) {
+  //   var i = element.attributes.length;
+  //   while (i >= 0) {
+  //     var attribute = element.attributes[i];
+  //     /**
+  //      * Ignore <path></path> "d" attribute.
+  //      */
+  //     if (attribute && attribute.name !== "d") {
+  //       element.removeAttribute(attribute.name);
+  //     }
+  //     i--;
+  //   }
+  //   this.setAttributes(element, attributes);
+  // },
   resetAttributes(element, attributes) {
-    var i = element.attributes.length;
-    while (i >= 0) {
-      var attribute = element.attributes[i];
-      /**
-       * Ignore <path></path> "d" attribute.
-       */
-      if (attribute && attribute.name !== "d") {
-        element.removeAttribute(attribute.name);
+    const paths = this.getPathElements(element);
+    paths.forEach(path => {
+      var i = path.attributes.length;
+      while (i >= 0) {
+        var attribute = path.attributes[i];
+        if (attribute && attribute.name !== "d") {
+          path.removeAttribute(attribute.name);
+        }
+        i--;
       }
-      i--;
-    }
-    this.setAttributes(element, attributes);
+      this.setAttributes(path, attributes);
+    });
   },
   valueIsNotBlack(value) {
     return value !== "#000" && value !== "black";
@@ -132,15 +149,30 @@ Svg.prototype = {
 
     return false;
   },
+  // toOriginal: function (outerHTML) {
+  //   var element = Svg2(outerHTML).toElement();
+  //   this.resetAttributes(element, this.original.attributes);
+  //
+  //   var originalPath = this.getFirstPathElement(this.original.element);
+  //   if (originalPath) {
+  //     var path = this.getFirstPathElement(element);
+  //     this.resetAttributes(path, this.getAttributes(originalPath));
+  //   }
+  //
+  //   return element.outerHTML;
+  // },
   toOriginal: function (outerHTML) {
     var element = Svg2(outerHTML).toElement();
-    this.resetAttributes(element, this.original.attributes);
 
-    var originalPath = this.getFirstPathElement(this.original.element);
-    if (originalPath) {
-      var path = this.getFirstPathElement(element);
-      this.resetAttributes(path, this.getAttributes(originalPath));
-    }
+    // Здесь также применяем атрибуты ко всем путям
+    const originalPaths = this.getPathElements(this.original.element);
+    const currentPaths = this.getPathElements(element);
+
+    currentPaths.forEach((path, index) => {
+      if (originalPaths[index]) {
+        this.resetAttributes(path, this.getAttributes(originalPaths[index]));
+      }
+    });
 
     return element.outerHTML;
   },
@@ -158,14 +190,23 @@ Svg.prototype = {
   setFillBlack(el) {
     el.setAttribute("fill", "#000");
   },
+  // checkFillState(el) {
+  //   var path = this.getFirstPathElement(el);
+  //   if (path && this.hasFill(path)) {
+  //     this.setFillBlack(path);
+  //   } else if (this.hasFill(el)) {
+  //     this.setFillBlack(el);
+  //   }
+  //
+  //   return el;
+  // },
   checkFillState(el) {
-    var path = this.getFirstPathElement(el);
-    if (path && this.hasFill(path)) {
-      this.setFillBlack(path);
-    } else if (this.hasFill(el)) {
-      this.setFillBlack(el);
-    }
-
+    const paths = this.getPathElements(el);
+    paths.forEach(path => {
+      if (this.hasFill(path)) {
+        this.setFillBlack(path);
+      }
+    });
     return el;
   },
   process: async function () {

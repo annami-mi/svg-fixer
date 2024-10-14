@@ -7,7 +7,7 @@ const Option = function (options) {
   this.data = {
     showProgressBar: false,
     throwIfDestinationDoesNotExist: true,
-    traceResolution: 600,
+    traceResolution: 1000,
   };
   if (!is.object(options)) {
     throw error.invalidParameterError("options", "object", options);
